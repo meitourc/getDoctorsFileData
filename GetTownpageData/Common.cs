@@ -8,7 +8,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Diagnostics;
-namespace GetTownpageData
+using System.Threading;
+
+namespace GetDoctorsFileData
 
 {
     class Common
@@ -69,6 +71,7 @@ namespace GetTownpageData
             string html = "";
             try
             {
+     
                 //指定したURLに対してrequestを投げてresponseを取得
                 Console.WriteLine(url);
 
@@ -270,6 +273,17 @@ namespace GetTownpageData
             }
             return Directory.CreateDirectory(path);
         }
+
+        public static String getNowDateByString()
+        {
+            //itemNo（取得{した順番）
+            DateTime dt = DateTime.Now;
+            //string strItemGetDate = dt.ToString();
+            string result = dt.ToString("yyyyMMddHHmmss");
+
+            return result;
+        }
+
 
 
 

@@ -1,4 +1,4 @@
-﻿namespace GetTownpageData
+﻿namespace GetDoctorsFileData
 {
     partial class Form1
     {

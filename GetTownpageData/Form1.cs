@@ -16,11 +16,16 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static GetTownpageData.Common;
-using static GetTownpageData.MessageManagement;
+using static GetDoctorsFileData.Common;
+using static GetDoctorsFileData.MessageManagement;
+using static GetDoctorsFileData.DoctorsFileItem;
 
 
-namespace GetTownpageData
+
+
+
+
+namespace GetDoctorsFileData
 {
     public partial class Form1 : Form
     {
@@ -30,6 +35,12 @@ namespace GetTownpageData
         static System.Text.Encoding enc = System.Text.Encoding.GetEncoding("utf-8");
         static List<TownpageItem> townpageItemList = new List<TownpageItem>();
         static List<TownpageAreaItem> townpageAreaItemList = new List<TownpageAreaItem>();
+
+        static List<DoctorsFileItem> doctorsFileDataList = new List<DoctorsFileItem>();
+
+
+        static int SLEEP_TIME = 3000;
+        int NO = 0;
 
         //処理状態メッセージ用変数
         static int PROC_STATUS = PROC_STANDBY;
@@ -72,6 +83,7 @@ namespace GetTownpageData
         /// <param name="e"></param>
         private void button_exec_Click(object sender, EventArgs e)
         {
+            OUTPUT_FOLDAR_PATH = textBox_output.Text;
 
             if (!checkOutputDirectory())
             {
@@ -86,12 +98,19 @@ namespace GetTownpageData
             townpageAreaItemList = new List<TownpageAreaItem>();
             //string url = "https://doctorsfile.jp/search/pv666/page/2/";
             //string url = "https://doctorsfile.jp/search/pv666/page/";
-            string url = "https://doctorsfile.jp/search/ms72_pv666/"; ;
+            //string url = "https://doctorsfile.jp/search/ms72_pv666/page/2/";
+            string targetUrl = "https://doctorsfile.jp/search/ms72_pv666/page/"; ;
 
-            ScrapingTownpageData(url);
+            for (int pageNum = 1;pageNum <= 35;pageNum++)
+            //for (int pageNum = 1; pageNum <= 2; pageNum++)
+            {
+                string url = targetUrl + pageNum + "/";
+                ScrapingTownpageData(url);
+            }
 
+            csvWrite_doctorsFileData();
             //scrapingMain();
-            csvWrite_townpageData();
+            //csvWrite_townpageData();
 
             conponentControl(PROC_END);
 
@@ -178,7 +197,7 @@ namespace GetTownpageData
                     {
                         break;
                     }
-                    Thread.Sleep(3000);
+                    Thread.Sleep(SLEEP_TIME);
                 }
             }
 
@@ -193,8 +212,9 @@ namespace GetTownpageData
         {
             //string url = "https://support-api.itp.ne.jp/address/list?code=03";
             string url = "https://support-api.itp.ne.jp/address/list?code=" + todoFukenCode;
-            
 
+
+            Thread.Sleep(SLEEP_TIME);
             string jsonDataStr = getHtml(url);
             //Debug.WriteLine(htmlData);
             var jsonData = DynamicJson.Parse(jsonDataStr);
@@ -249,11 +269,13 @@ namespace GetTownpageData
         /// <param name="url"></param>
         private void ScrapingTownpageData(string url)
         {
+
+            Thread.Sleep(3000);
             string source = getHtml(url);
-            Console.WriteLine(source);
+            //Console.WriteLine(source);
             string replaceHtmlData = getReplaceHtmlData(source);
 
-            Console.WriteLine(replaceHtmlData);
+            //Console.WriteLine(replaceHtmlData);
 
             //getTownpageTotalNum(jsonDataStr);
             //Debug.WriteLine(htmlData);
@@ -285,74 +307,87 @@ namespace GetTownpageData
 
 
 
-                    pattern = "<aclass=.result__name.href=.(.*?).>";
-                    String strItemDetailUrl = extractingDataWithRegexSingle(m.ToString(), pattern);
-                    Console.WriteLine(strItemDetailUrl);
-                    detailUrl = baseUrl + strItemDetailUrl;
+                    //pattern = "<aclass=.result__name.href=.(.*?).>";
+                    //String strItemDetailUrl = extractingDataWithRegexSingle(m.ToString(), pattern);
+                    //Console.WriteLine(strItemDetailUrl);
+
+                    //string pattern2 = "<aclass=.result__name.href=.(.*?).>";
+                    //MatchCollection match2 = extractingDataWithRegexMulti(replaceHtmlData, pattern2);
+
+                    string pattern2 = "<aclass=.result__name.href=.(.*?).>";
+                    string url2 = extractingDataWithRegexSingle(m.ToString(), pattern2);
+                    Console.WriteLine(url2);
+
+                    detailUrl = baseUrl + url2;
 
                     if (detailUrl != "")
                     {
+
+
+                        Thread.Sleep(SLEEP_TIME);
                         source2 = getHtml(detailUrl);
                         replaceHtmlData2 = getReplaceHtmlData(source2);
 
 
+                        string pattern3 = "<!--#####パンくずend#####-->(.*?)<!--#####メイン・サブカラム構成start#####-->";
+                        string match3 = extractingDataWithRegexSingle(replaceHtmlData2, pattern3);
+                        //Console.WriteLine(doctorsFileItem.ItemTitle);
 
-                        string pattern2 = "<!--#####パンくずend#####-->(.*?)<!--#####メイン・サブカラム構成start#####-->";
-                        MatchCollection match2 = extractingDataWithRegexMulti(replaceHtmlData2, pattern2);
-
-                        foreach (Match m2 in match2)
-                        {
-                            Console.WriteLine(m2);
-
-                            pattern2 = "name.:\"(.*?)\"";
-                            String strItemTitle = extractingDataWithRegexSingle(m2.ToString(), pattern2);
-                            Console.WriteLine(strItemTitle);
-
-                            pattern2 = "telephone.:\"(.*?)\"";
-                            String strItemtelephone = extractingDataWithRegexSingle(m2.ToString(), pattern2);
-                            Console.WriteLine(strItemtelephone);
-
-                            pattern2 = "postalCode.:\"(.*?)\"";
-                            String strItemPostalCode = extractingDataWithRegexSingle(m2.ToString(), pattern2);
-                            Console.WriteLine(strItemPostalCode);
-
-                            pattern2 = "addressRegion.:\"(.*?)\"";
-                            String strItemAddressRegion = extractingDataWithRegexSingle(m2.ToString(), pattern2);
-                            Console.WriteLine(strItemAddressRegion);
-
-                            pattern2 = "addressLocality.:\"(.*?)\"";
-                            String strItemAddressLocality = extractingDataWithRegexSingle(m2.ToString(), pattern2);
-                            Console.WriteLine(strItemAddressLocality);
-
-                            pattern2 = "streetAddress.:\"(.*?)\"";
-                            String strItemStreetAddress = extractingDataWithRegexSingle(m2.ToString(), pattern2);
-                            Console.WriteLine(strItemStreetAddress);
-
-                        }
+                        DoctorsFileItem doctorsFileItem = new DoctorsFileItem();
 
 
+                        pattern2 = "name.:\"(.*?)\"";
+                        doctorsFileItem.ItemTitle = extractingDataWithRegexSingle(match3, pattern2);
+                        Console.WriteLine(doctorsFileItem.ItemTitle);
 
-                        //タイトル
-                        //pattern = "<aclass=.result__name.href=./[a-z]/[0-9]*/.>(.*?)</a>";
-                        //String strItemTitle = extractingDataWithRegexSingle(m.ToString(), pattern);
-                        //Console.WriteLine(strItemTitle);
-                        //
-                        ////住所
-                        //pattern = "<iclass=.ico-area-grayresult-data__icon.></i>(.*?)</li>";
-                        //String strItemArea = extractingDataWithRegexSingle(m.ToString(), pattern);
-                        //Console.WriteLine(strItemArea);
-                        //
-                        ////電話番号
-                        //pattern = "<iclass=.ico-tel-grayresult-data__icon.></i>(.*?)</li>";
-                        //String strItemTell = extractingDataWithRegexSingle(m.ToString(), pattern);
-                        //Console.WriteLine(strItemTell);
+                        pattern2 = "telephone.:\"(.*?)\"";
+                        doctorsFileItem.ItemTelephone = extractingDataWithRegexSingle(match3, pattern2);
+                        Console.WriteLine(doctorsFileItem.ItemTelephone);
+
+                        pattern2 = "postalCode.:\"(.*?)\"";
+                        doctorsFileItem.ItemPostalCode = extractingDataWithRegexSingle(match3, pattern2);
+
+                        Console.WriteLine(doctorsFileItem.ItemPostalCode);
+
+                        pattern2 = "addressRegion.:\"(.*?)\"";
+                        doctorsFileItem.ItemAddressRegion = extractingDataWithRegexSingle(match3, pattern2);
+
+                        Console.WriteLine(doctorsFileItem.ItemAddressRegion);
+
+                        pattern2 = "addressLocality.:\"(.*?)\"";
+                        doctorsFileItem.ItemaddressLocality = extractingDataWithRegexSingle(match3, pattern2);
+
+                        Console.WriteLine(doctorsFileItem.ItemaddressLocality);
+
+                        pattern2 = "streetAddress.:\"(.*?)\"";
+                        doctorsFileItem.ItemStreetAddress = extractingDataWithRegexSingle(match3, pattern2);
+                        Console.WriteLine(doctorsFileItem.ItemStreetAddress);
 
 
 
+                        doctorsFileItem.ItemDetailUrl = detailUrl;
 
+
+                        NO++;
+                        Console.WriteLine("***********************");
+                        Console.WriteLine(NO);
+                        Console.WriteLine("***********************");
+
+                        doctorsFileDataList.Add(doctorsFileItem);
 
 
                     }
+                    else
+                    {
+                        Console.WriteLine("抽出失敗：" + NO);
+                    }
+       
+
+                    //if(NO == 3)
+                    //{
+                    //    break;
+                    //}
+
 
 
                 }
@@ -385,6 +420,54 @@ namespace GetTownpageData
         }
 
 
+        private void csvWrite_doctorsFileData()
+        {
+            string nowDate = getNowDateByString();
+
+            string output_file_path = OUTPUT_FOLDAR_PATH + @".\rakutenItemInfoResult" + nowDate + ".csv";
+            //string output_file_name = @"\townpageDataeResult";
+            string strData = ""; //1行分のデータ
+            try
+            {
+                System.IO.StreamWriter sw = new System.IO.StreamWriter(output_file_path,
+                                                                   false,
+                                                                   System.Text.Encoding.Default);
+                //ヘッダ書き込み
+                strData = "名前" + DELIMITER +
+                    "電話番号" + DELIMITER +
+                    "郵便番号" + DELIMITER +
+                    "住所1" + DELIMITER +
+                    "住所2" + DELIMITER +
+                    "住所3" + DELIMITER +
+                    "URL";
+                sw.WriteLine(strData);
+
+                foreach (var data in doctorsFileDataList)
+                {
+                    strData =
+                        DOUBLE_QUOTATION + data.ItemTitle + DOUBLE_QUOTATION + DELIMITER +
+                        DOUBLE_QUOTATION + data.ItemTelephone + DOUBLE_QUOTATION + DELIMITER +
+                        DOUBLE_QUOTATION + data.ItemPostalCode + DOUBLE_QUOTATION + DELIMITER +
+                        DOUBLE_QUOTATION + data.ItemAddressRegion + DOUBLE_QUOTATION + DELIMITER +
+                        DOUBLE_QUOTATION + data.ItemaddressLocality + DOUBLE_QUOTATION + DELIMITER +
+                        DOUBLE_QUOTATION + data.ItemStreetAddress + DOUBLE_QUOTATION + DELIMITER +
+                        DOUBLE_QUOTATION + data.ItemDetailUrl + DOUBLE_QUOTATION;
+
+
+                    //DOUBLE_QUOTATION + ;data.itemNearStation + DOUBLE_QUOTATION + DELIMITER +
+
+                    sw.WriteLine(strData);
+                }
+                sw.Close();
+            }
+            catch (Exception ex)
+            {
+                conponentControl(PROC_ERROR);
+                Console.WriteLine(ex + "Errorが発生しました。");
+            }
+
+
+        }
 
         /// <summary>
         /// CSV書き込み

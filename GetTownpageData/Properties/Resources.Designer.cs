@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace GetTownpageData.Properties
+namespace GetDoctorsFileData.Properties
 {
 
 
